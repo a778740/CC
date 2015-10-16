@@ -1,0 +1,121 @@
+hbase Install(버전이 바뀔수도 있음)
+
+    cd /usr/local
+    mkdir data
+    cd data
+    wget http://www.apache.org/dist/hbase/stable/hbase-1.1.2-bin.tar.gz
+    tar xvfz hbase-1.1.2-bin.tar.gz
+    cd hbase-1.1.2
+    hbase_rootdir=${TMPDIR-'/usr/local/data'}/tsdhbase
+    iface=lo'uname | sed -n s/Darwin/0/p'
+
+hbase-site.xml correction
+
+    vim conf/hbase-site.xml
+
+configuration Add to between the tags
+
+<configuration>
+    <property>
+        <name>hbase.rootdir</name>
+        <value>file:///DIRECTORY/hbase</value>
+    </property>
+    <property>
+        <name>hbase.zookp.property.eataDir</name>
+        <value>/DRECTORY/zookeeper</value>
+    </property>
+</configuration>
+
+hbase.sh Run
+
+    ./bin/start-hbase.sh
+    # master running as process (process number). Stop it first
+
+※When " hbase.sh " run, If this is notification because the setting of the 'java_home JDK' is not successful, Run a " profile " again ($ source /etc/profile)
+
+GnuPlot Install
+
+    cd /usr/local
+    yum install ant ant-nodeps lzo-devel.x86_64
+    yum list \*gd\*
+    yum install gd-devel.i686
+    wget http://sourceforge.net/projects/gnuplot/files/gnuplot/4.6.3/gnuplot-4.6.3.tar.gz
+    tar zxvf gnuplot-4.6.3.tar.gz
+    cd gnuplot-4.6.3
+    ./configure
+    make install
+    yum install gnuplot
+    # apt-get install dh-autoreconf
+
+OpenTSDB Install
+
+    cd /usr/local
+
+    # 필요시 yum install git
+    git clone git://github.com/OpenTSDB/opentsdb.git
+
+    cd opentsdb
+    yum install autoconf
+    yum install automake
+    ./build.sh  <- It takes about 10 minutes to complete.
+    env COMPRESSION=NONE HBASE_HOME=/usr/local/data/hbase-1.1.2 ./src/create_table.sh 
+    tsdtmp=${TMPDIR-'/usr/local/data'}/tsd
+    mkdir -p "$tsdtmp"
+
+Open TSDB Run
+
+    ./build/tsdb tsd --port=4242 --staticroot=build/staticroot --cachedir=/usr/local/data --auto-metric
+
+    # 웹브라우저에서 확인
+    http://127.0.0.1:4242
+
+
+association
+
+Data Input Test(Restful 방법)
+
+# openTSDB 동작중인 터미널은 닫지 말고..
+# 새로운 터미널을 열고 진행하세요...
+
+sudo yum install python-setuptools python-setuptools-devel
+sudo easy_install pip
+pip install requests
+
+vim post_test.py
+
+import time
+import requests
+import json
+
+url = "http://127.0.0.1:4242/api/put"
+
+data = {
+    "metric": "foo.bar",
+    "timestamp": time.time(),
+    "value": 2015,
+    "tags": {
+       "host": "mypc"
+    }
+}
+
+ret = requests.post(url, data=json.dumps(data))
+print "ok"
+
+python post_test.py
+
+    # 웹브라우저에서 확인
+    http://127.0.0.1:4242
+
+
+association
+
+# 웹브라우저에서 확인
+http://127.0.0.1:4242/api/query?start=2015/10/14-00:00:00&end=2015/10/14-08:19:49&m=sum:foo.bar
+
+# 결과
+[{"metric":"foo.bar","tags":{"host":"mypc"},"aggregateTags":[],"dps":{"1444835983":2015.0}}]
+
+
+
+
+끝!!!!
