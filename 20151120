@@ -1,0 +1,60 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*- 
+
+
+import urllib2 # extensible library for opening URLs
+import time
+import sys
+import json
+import requests
+
+from lxml.html import parse, fromstring # processing XML and HTML
+
+
+# 인천 남구 용현동 기상상황 확인 url
+url = 'http://www.kma.go.kr/wid/queryDFSRSS.jsp?zone=2823759100'
+url_local ="http://127.0.0.1:4242/api/put"
+temp=[]
+
+def insert(temperature, tag_site, value):
+        data={
+                "metric":"temperature",
+                "timestamp":time.time(),
+                "value":value,
+                "tags":{
+                        "site":tag_site
+                }
+        }
+        ret = requests.post(url_local, data=json.dumps(data))
+
+        time.sleep(1)
+
+
+def temp_process(xml):
+    for  elt in xml.getiterator("temp"):    # getting temp tag 
+        temp_val = elt.text
+        print temp_val
+
+    insert('temperature', 'inchon', temp_val)
+    insert('temperature', 'seoul', 20)
+if __name__ == '__main__':
+
+    while 1 :
+            t = time.localtime()
+            tsec = t.tm_sec
+
+            if tsec%10!=0 :
+                    page = urllib2.urlopen(url).read()
+                    print page
+
+                    time.sleep(1)
+            else :
+                    xml_raw = fromstring(page)
+                    temp_process(xml_raw)
+
+
+
+
+
+
+끝!!
